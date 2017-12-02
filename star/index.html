@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>星级评分</title>
+	<style type="text/css">
+		body,ul,li {
+			padding: 0;
+			margin: 0;
+		}
+
+		li {
+			list-style-type: none;
+		}
+		.rating{
+			width:130px;
+			height: 26px;
+			margin:100px auto;
+		}
+		.rating-item{
+			float: left;
+			width: 26px;
+			height: 26px;
+			background: url(star.png) no-repeat;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+	<ul class="rating" id="rating">
+		<li class="rating-item" title="很不好"></li>
+		<li class="rating-item" title="不好"></li>
+		<li class="rating-item" title="一般"></li>
+		<li class="rating-item" title="好"></li>
+		<li class="rating-item" title="很好"></li>
+	</ul>
+
+<script src="http://libs.baidu.com/jquery/1.11.3/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+	var num = 2,
+	    $rating = $('#rating');
+	    $item = $rating.find('.rating-item');
+
+
+	// $('#rating').find('.rating-item').each(function (index) {
+	// 	// body...
+	// 	if (index < num) {
+	// 		$(this).css('background-position','0 -26px');
+	// 	}else{
+	// 		$(this).css('background-position', '0 0');
+	// 	}
+	// });
+
+	// 1声明成一个函数
+	//点亮，修改选中item的背景
+     var lightOn = function(num){
+     	$item.each(function (index) {
+		// body...
+		if (index < num) {
+			$(this).css('background-position','0 -26px');
+		}else{
+			$(this).css('background-position', '0 0');
+		}
+	});
+     };
+     //2初始化
+     lightOn(num);
+
+     //3事件绑定
+     //因为item会重复用到，所以用$item保存下来
+     //对lightOn 函数进行修改，用$item代替$('#rating').find('.rating-item')
+     //在父容器上触发mouseout事件-->保存父容器
+     $item.on('mouseover',function () {
+     	// body...
+     	lightOn($(this).index() + 1);
+     }).on('click',function(){
+     	num = $(this).index() + 1;
+     });
+    
+    //鼠标离开的时候，若已经点击，就点亮选中的星星。
+     $rating.on('mouseout',function(){
+     	lightOn(num);
+     })
+
+
+   
+     // 挑刺1：全局变量太多，不利于多人合作和自己以后的需求修改
+     //解决之道：自我执行的匿名函数  
+     // (function(){})();
+
+//挑刺2:事件绑定的写法，为每一个星星都绑定了一个事件，是一种浪费，特别是星星比较多的时候，这种浪费就会越发明显。因为大多数事件会冒泡。
+//解决之道：利用事件冒泡的原理，将事件绑定在父容器上，这也叫做“事件委托”。jquery已经封装好了事件委托的on方法。
+
+//挑刺3:代码没法复用，如果有多个评分怎么办？
+
+</script>
+</body>
+</html>
+
+
+

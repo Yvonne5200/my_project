@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>星级评分</title>
+	<style type="text/css">
+		body,ul,li {
+			padding: 0;
+			margin: 0;
+		}
+
+		li {
+			list-style-type: none;
+		}
+		.rating{
+			width:130px;
+			height: 26px;
+			margin:100px auto;
+		}
+		.rating-item{
+			float: left;
+			width: 26px;
+			height: 26px;
+			background: url(star.png) no-repeat;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+	<ul class="rating" id="rating">
+		<li class="rating-item" title="很不好"></li>
+		<li class="rating-item" title="不好"></li>
+		<li class="rating-item" title="一般"></li>
+		<li class="rating-item" title="好"></li>
+		<li class="rating-item" title="很好"></li>
+	</ul>
+	<ul class="rating" id="rating2">
+		<li class="rating-item" title="很不好"></li>
+		<li class="rating-item" title="不好"></li>
+		<li class="rating-item" title="一般"></li>
+		<li class="rating-item" title="好"></li>
+		<li class="rating-item" title="很好"></li>
+	</ul>
+
+<script src="http://libs.baidu.com/jquery/1.11.3/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+//修改2:将所有的代码放入自我执行的匿名函数中
+var rating = (function(){
+// var num = 2,//修改3:为了复用，改为传参
+// 	    $rating = $('#rating');//修改3:为了复用，改为传参
+// 	    $item = $rating.find('.rating-item');
+
+
+//避免多吃调用就多次声明，将lightOn放到init外面
+//将$item传参进来，调用lightOn的地方的也要相应改变
+	 var lightOn = function($item, num){
+     	$item.each(function (index) {
+		// body...
+		if (index < num) {
+			$(this).css('background-position','0 -26px');
+		}else{
+			$(this).css('background-position', '0 0');
+		}
+	});
+     };
+
+// 我们希望的调用方式
+// 我们希望返回一个对象，对象里面有个init方法
+// 我们希望的调用方式如下
+// return {
+// 	init();
+// }
+// var rating = (function(){
+
+// })();
+// rating.init('#rating',2);
+// rating.init('#rating2',3);
+var init = function(el,num){
+	var $rating = $(el),
+		$item = $rating.find('.rating-item');
+
+	
+		//2初始化
+     lightOn($item,num);
+
+     //3事件绑定
+     //修改1:改为事件委托
+     $rating.on('mouseover','.rating-item',function () {
+     	// body...
+     	lightOn($item,$(this).index() + 1);
+     }).on('click','rating-item',function(){
+     	num = $(this).index() + 1;
+     }).on('mouseout',function(){
+     	lightOn($item,num);
+     });
+};
+    
+    // 修改4:改为jQUERY插件
+    $.fn.extend({
+    	rating:function(num){
+    		return this.each(function(){
+    			init(this,num);
+    		});
+    	}
+    });
+
+     return{
+     	init:init
+     };
+
+})();
+
+rating.init('#rating',2);
+// rating.init('#rating2',3);
+
+//jquey插件的调用
+$('#rating2').rating(4);
+    
+ 
+
+</script>
+</body>
+</html>
+
+
+

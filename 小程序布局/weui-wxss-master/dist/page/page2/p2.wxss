@@ -1,0 +1,33 @@
+/* p2.wxss */
+.borderd {
+  border:1px solid #888;
+  display: inline-block;
+  height: 38px;
+}
+.section{
+ display: flex;
+ justify-content: space-around;
+ align-items: center;
+ margin-left: -50px;
+ font-size: 16px;
+}
+.padd-right{
+  padding-right: 20px;
+}
+button[type="primary"].blue-bg {
+  background-color: #5C8DDE;
+  width: 50%;
+}
+.mar-top{
+  margin-top:30px;
+}
+.mar-top-2{
+  margin-top:10px;
+}
+.font-small{
+  font-size: 14px;
+  color: #8e8e8e;
+}
+.green{
+  color: #5C8DDE;
+}

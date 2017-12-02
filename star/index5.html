@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>抽象出父类</title>
+<style type="text/css">
+		body,ul,li {
+			padding: 0;
+			margin: 0;
+		}
+
+		li {
+			list-style-type: none;
+		}
+		.rating{
+			width:130px;
+			height: 26px;
+			margin:100px auto;
+		}
+		.rating-item{
+			float: left;
+			width: 26px;
+			height: 26px;
+			background: url(star.png) no-repeat;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+	<ul class="rating" id="rating">
+		<li class="rating-item" title="很不好"></li>
+		<li class="rating-item" title="不好"></li>
+		<li class="rating-item" title="一般"></li>
+		<li class="rating-item" title="好"></li>
+		<li class="rating-item" title="很好"></li>
+	</ul>
+
+    <ul class="rating2" id="rating2">
+    <li class="rating-item" title="很不好"></li>
+    <li class="rating-item" title="不好"></li>
+    <li class="rating-item" title="一般"></li>
+    <li class="rating-item" title="好"></li>
+    <li class="rating-item" title="很好"></li>
+  </ul>
+
+<script src="http://libs.baidu.com/jquery/1.11.3/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+	// 抽象出父类
+  // 1.定义一个Light父类：复制一份LightEntire,并改名为Light；
+  // 2.将2个函数的不同之处提取出来，用全局变量控制：如一颗还是半颗this.add
+  //如触发事件mousemove与mouseover，this.selectEvent
+  //不同点3:点亮半颗模式下，需要先判断，选择的是半颗还整颗，然后点亮；在点亮整颗的模式下，就是直接点亮，不用判断。将判断条件全部放入select函数中。所以在父类中定义一个select方法，并强制子类重写该方法。
+// 到此，解决了所有的不同点，然后就是提取共同点，修改父类和子类。
+// init都一样，不变
+// 修改lightOn方法，改为以点亮整颗为基础，在子类中，直接调用父类的lightOn方法
+ // 整个bindEvent方法都可以干掉，因为父类中已经写了。
+// 为了不继承父类的构造函数，只继承父类的方法，写一个继承函数extend。
+// 增加需求，评分只能点击一次，点过后不能再点。
+// 增加一个解绑定事件的方法
+//变成jquery插件
+
+
+// 4.继承构造函数上的不同
+// 5.继承原型上的方法：
+// 实例化父类给子类的构造函数原型 LightEntire.prototype = new Light();
+// new Light（）的结果是一个对象，可以以此访问到父类Light上的方法和属性。
+// 然后实例化子类（new LightEntire();）的时候也会生成一个对象，这个对象可以找到LightEntire的原型。而LightEntire的原型又是new Light()生成的对象，这就形成了一个原型链。这就是原型继承，没有如java那样的extends关键字。
+
+// 那么问题来了：我们只希望继承方法，不要构造函数里面的东西。因为如果构造函数很庞大，那么实例化会很费时。
+// 解决之道：重新写一个继承方法
+// 创建一个空的临时的函数，将父类的原型赋值给空函数的原型。
+// 再次实化的时候，父类的构造函数就是空的。???
+// 将子类的构造函数设置为自己的
+
+var rating = (function() {
+  // LightEntire.prototype = new Light();
+  // new LightEntire();
+
+  // 继承
+    var extend = function(subClass, superClass){
+      var F = function(){};
+      F.prototype = superClass.prototype;
+      subClass.prototype = new F();
+      // 为啥不superClass.prototype = superClass.prototype;？？？
+      subClass.prototype.construtor = subClass;
+
+    };
+
+
+//点亮
+  var Light = function(el,options){
+  	this.$el = $(el);
+  	this.$item = this.$el.find('.rating-item');
+  	this.opts = options;
+    this.add = 1;
+    this.selectEvent = 'mousemove';
+  };
+
+  // 一般将初始化方法写在构造函数的原型上，这样可以保证，不管实例化多少次，内存只有一份。
+  Light.prototype.init = function(){
+  	//刚开始需要点亮几颗星星
+  	// 绑定事件mouseover or mouseout
+  	this.lightOn(this.opts.num);
+  	if (!this.opts.readOnly) {
+		this.bindEvent();
+  	}
+  	
+  };
+  Light.prototype.lightOn = function(num){
+
+        //num有可能是小数
+        num = parseInt(num);
+
+  		this.$item.each(function (index) {
+		// body...
+		if (index < num) {
+			$(this).css('background-position','0 -26px');
+		}else{
+			$(this).css('background-position', '0 0');
+		}
+	});
+  };
+  Light.prototype.bindEvent = function(){
+  	    var self = this,
+  	    itemLength = self.$item.length;
+
+  		self.$el.on(self.selectEvent,'.rating-item',function (e) {
+  			var  $this = $(this),
+              num = 0;
+        
+
+        self.select(e,$this);
+        var num = $(this).index() + self.add;
+     		self.lightOn(num);
+
+
+     		(typeof self.opts.select === 'function') &&
+     		 self.opts.select.call(this,num,itemLength);
+
+     		 self.$el.trigger('select',[num,itemLength]);
+     }).on('click','.rating-item',function(){
+     	self.opts.num = $(this).index() + self.add;//将num保存为可全局使用
+     	(typeof self.opts.chosen === 'function') &&
+     		 self.opts.chosen.call(this,self.opts.num,itemLength);
+
+     	self.$el.trigger('chosen',[self.opts.num,itemLength]);
+
+     }).on('mouseout',function(){
+     	self.lightOn(self.opts.num);
+     });
+ };
+
+ Light.prototype.select = function(){
+    throw new Errow("子类必须实现此方法");
+ };
+ Light.prototype.unbindEvent = function(){
+      this.$el.off();//解绑定所有事件
+ };
+
+
+
+
+
+
+//点亮整颗
+  var LightEntire = function(el,options){
+    // this.$el = $(el);
+    // this.$item = this.$el.find('.rating-item');
+    // this.opts = options;
+
+    //调用父类，继承父类构造函数中的内容，并用call让this指向自己,
+    Light.call(this,el,options);
+    this.selectEvent = 'mouseover';
+  };
+
+//继承父类的方法
+  extend(LightEntire,Light);
+
+  // 一般将初始化方法写在构造函数的原型上，这样可以保证，不管实例化多少次，内存只有一份。
+  //init因为完全一样，所以可以继承父类，在此处删掉。
+  // LightEntire.prototype.init = function(){
+  //   //刚开始需要点亮几颗星星
+  //   // 绑定事件mouseover or mouseout
+  //   this.lightOn(this.opts.num);
+  //   if (!this.opts.readOnly) {
+  //   this.bindEvent();
+  //   }
+    
+  // };
+  LightEntire.prototype.lightOn = function(num){
+
+        //num有可能是小数
+        num = parseInt(num);
+
+      // 调用父类的方法，并用call改变方法中的this指向
+      Light.prototype.lightOn.call(this,num);
+  };
+
+
+
+// 写自己的select方法
+LightEntire.prototype.select = function(){
+  self.add = 1;
+}
+
+
+
+
+
+
+
+  //点亮半颗颗
+  var LightHalf = function(el,options){
+  	// this.$el = $(el);
+  	// this.$item = this.$el.find('.rating-item');
+  	// this.opts = options;
+  	// this.add = 1;
+    //调用父类，继承父类构造函数中的内容，并用call让this指向自己,
+    Light.call(this,el,options);
+    this.selectEvent = 'mousemove';
+  };
+
+  // 一般将初始化方法写在构造函数的原型上，这样可以保证，不管实例化多少次，内存只有一份。
+  // LightHalf.prototype.init = function(){
+  // 	//刚开始需要点亮几颗星星
+  // 	// 绑定事件mouseover or mouseout
+  // 	this.lightOn(this.opts.num);
+  // 	if (!this.opts.readOnly) {
+		// this.bindEvent();
+  // 	}
+  	
+  // };
+
+  //继承父类的方法
+  extend(LightHalf,Light);
+
+
+  LightHalf.prototype.lightOn = function(num){
+    	var count = parseInt(num);
+    	var isHalf = count !== num;
+
+
+      // 调用父类的方法，并用call改变方法中的this指向
+      Light.prototype.lightOn.call(this,count);
+
+
+  		if (isHalf) {
+  			this.$item.eq(count).css('background-position','0 -52px');
+  		}
+      
+  };
+
+ // 写自己的select方法
+LightHalf.prototype.select = function(e,$this){
+  if (e.pageX - $this.offset().left < $this.width()/2) {//半颗
+           this.add = 0.5;
+         }else{//整颗
+               this.add = 1;
+         } 
+};
+
+
+
+
+
+
+
+	//默认参数
+    var defaults = {
+    	mode:'LightEntire',
+    	num: 0,
+    	readOnly:false,
+    	select:function(){},
+    	chosen:function(){}
+    };
+
+	// 初始化方法
+	var mode = {
+		'LightEntire':LightEntire,
+		'LightHalf':LightHalf
+	};
+
+	var init = function(el,option){
+    var $el= $(el),
+        rating = $el.data('rating'),//保存实例化的对象，实现单例模式
+		    options = $.extend({},defaults,typeof option === 'object' && option);
+		// 用options的内容来覆盖defaults，并将生成的内容存放到前面的空对象中，然后将空对象返回出来给option。
+		//调用,通过实化LightEntire方法
+		// new LightHalf(el,options).init();
+		if (!mode[options.mode]) {
+			options.mode = 'LightEntire';
+		}
+		// new mode[options.mode](el,options).init();
+    // 改为单例模式，将实例化后的对象保存起来
+    if (!rating) {
+    $el.data('rating',(rating = new mode[options.mode](el,options)));
+    rating.init();
+	  }
+    //若为字符串，直接执行传过来的方法
+    if (typeof option === 'string') rating[option]();
+};
+
+
+// jQuery插件
+$.fn.extend({
+  rating: function(option) {
+    return this.each(function(){
+      init(this, option);
+    });
+  }
+})
+
+
+	return {
+		init:init
+	};
+
+})();
+
+
+// 用jquery的方式来调用
+$('#rating').rating({
+  mode: 'LightEntire',
+  num:2,
+});
+$('#rating2').rating({
+  mode: 'LightHalf',
+  num:2.5,
+});
+$('#rating2').on('chosen',function(){
+  $('#rating2').rating('unbindEvent');
+});
+
+// rating.init('#rating',{
+// 	mode:'LightHalf',
+// 	num:2.5,
+//   chosen:function(){
+//     rating.init('#rating','unbindEvent');
+//   }
+// });
+
+
+
+// $('#rating').on('select',function(e,num,total){
+// 	console.log(num + '/' + total);
+// }).on('chosen',function(e,num,total){
+// 	console.log(num + '/' + total);
+// });
+
+
+</script>
+
+
+</body>
+
+</html>
